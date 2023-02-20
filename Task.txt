@@ -1,0 +1,138 @@
+Task 6
+==========
+
+Create a docker image with centos as base image, Install httpd and copy the sample website content template to the root directory.
+Set the "MAINTAINER" directive with your name.
+
+Task 7
+========
+
+Create your own custom Docker image with nginx container with a "indexfile" having your name and push this image to your dockerhub registry with a tag version 1.
+Similarly, create a custom Docker image with nginx with a sample 'website template' and push this image to the dockerhub registry and tag this image with the name version 2 as well as 'latest' along with this image.
+Share the dockerhub pull command for this image and deploy the image and make sure it works
+
+
+Task 5)  
+====>  Run a nginx container and publish any port to the outside world, similarly run a httpd container with a website template and publish any port to the outside world.
+ Make sure that the both nginx and apache is running. Spin up a haproxy container and route the traffic to these containers. (refer docker hub for ha-proxy to know how this can be run)
+
+Hint : Check the diagram, in ha-proxy conf just add the backend servers (nginx and apache) and volume mount this ha-proxy conf to the ha-proxy container's default conf location.
+
+
+Solutions:---
+
+
+
+Task 6
+-----------------
+$  cat Dockerfile
+
+FROM centos:7
+
+RUN yum update -y && yum install httpd httpd-tools -y
+
+COPYindex.html index.html /var/www/html/
+
+MAINTAINER  arun
+
+CMD     ["/usr/sbin/httpd","-D","FOREGROUND"]
+
+
+$   docker image build -t  centos-httpd:try1 .
+
+$ docker run -itd --name test -p 80:80 centos-httpd:try1
+
+
+------------------------
+
+Task 7
+
+---------------
+cat Docker file
+
+FROM centos:7
+RUN yum -y install epel-release
+RUN yum -y update
+RUN yum -y install nginx
+COPY index.html  /usr/share/nginx/html/
+EXPOSE 80/tcp
+CMD ["nginx", "-g daemon off;"]
+
+
+$  docker image build -t centos-nginx:version1  .
+--------------------------------------------------------------------
+cat Docker file
+
+FROM centos:7
+RUN yum -y install epel-release
+RUN yum -y update
+RUN yum -y install nginx
+COPY ./website/  /usr/share/nginx/html/
+EXPOSE 80/tcp
+CMD ["nginx", "-g daemon off;"]
+
+	
+
+
+$  docker image build -t centos-nginx:version2  .
+$ docker run -itd --name website -p 80:80 centos-nginx:version2
+$ docker image build -t centos-nginx:version2 .
+
+$  docker image tag centos-nginx:version1 arunjoseph619/custum-nginx:version1
+$  docker image tag centos-nginx:version2 arunjoseph619/custum-nginx:version2
+ 
+$  docker push arunjoseph619/custum-nginx:version1
+$ docker push arunjoseph619/custum-nginx:version2
+
+$  docker pull arunjoseph619/custum-nginx:version1
+$  docker run -itd --name website1 -p 80:80 arunjoseph619/custum-nginx:version1
+
+$  docker pull arunjoseph619/custum-nginx:version2
+$  docker run -itd --name website2 -p 8080:80 arunjoseph619/custum-nginx:version2
+
+--------------
+
+
+
+Task --5
+
+$ sudo docker network create --driver=bridge mynet
+
+$ docker run -itd -v /home/ec2-user/website/:/usr/local/apache2/htdocs/ --net mynet --name apache -p 90:80 httpd
+$ docker run -itd -v /home/ec2-user/website2/:/usr/share/nginx/html/  --net mynet--name nginx  -p 70:80 nginx
+
+$vim /home/ec2-user/haproxy/haproxy.cfg 
+
+-----------------------
+global
+  stats socket /var/run/api.sock user haproxy group haproxy mode 660 level admin expose-fd listeners
+  log stdout format raw local0 info
+
+defaults
+  mode http
+  timeout client 10s
+  timeout connect 5s
+  timeout server 10s
+  timeout http-request 10s
+  log global
+
+
+frontend myfrontend
+  bind :80
+  default_backend webservers
+
+backend webservers
+  server s1 43.205.238.101:70 check
+  server s2 43.205.238.101:90 check
+
+---------------------------------------
+
+$ sudo docker run -d \
+   --name haproxy \
+   --net mynet \
+   -v /home/ec2-user/haproxy/:/usr/local/etc/haproxy:ro \
+   -p 80:80 \
+   haproxytech/haproxy-alpine:2.4
+--------------
+
+
