@@ -133,8 +133,10 @@ $ sudo docker run -d \
    -v /home/ec2-user/haproxy/:/usr/local/etc/haproxy:ro \
    -p 80:80 \
    haproxytech/haproxy-alpine:2.4
---------------
+---------------------------------------------------------------------------
 
+Task 5 solution: 
+-----------------------------------------------------------------------------
 
 $ docker run -itd -v /home/ec2-user/website/:/usr/local/apache2/htdocs/ --net mynet --name apache   httpd
 $ docker run -itd -v /home/ec2-user/website2/:/usr/share/nginx/html/  --net mynet --name nginx   nginx
@@ -160,7 +162,8 @@ frontend myfrontend
 
 backend webservers
   server s1 nginx:80 check
------------
+  server s2 apache:80 check
+------------------------------------------------
 $ sudo docker run -d \
    --name haproxy \
    --net mynet \
