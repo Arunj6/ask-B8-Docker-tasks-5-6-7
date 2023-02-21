@@ -136,3 +136,35 @@ $ sudo docker run -d \
 --------------
 
 
+$ docker run -itd -v /home/ec2-user/website/:/usr/local/apache2/htdocs/ --net mynet --name apache   httpd
+$ docker run -itd -v /home/ec2-user/website2/:/usr/share/nginx/html/  --net mynet --name nginx   nginx
+----------------
+
+cat haproxy/haproxy.cfg
+global
+  stats socket /var/run/api.sock user haproxy group haproxy mode 660 level admin expose-fd listeners
+  log stdout format raw local0 info
+
+defaults
+  mode http
+  timeout client 10s
+  timeout connect 5s
+  timeout server 10s
+  timeout http-request 10s
+  log global
+
+
+frontend myfrontend
+  bind :80
+  default_backend webservers
+
+backend webservers
+  server s1 nginx:80 check
+-----------
+$ sudo docker run -d \
+   --name haproxy \
+   --net mynet \
+   -v /home/ec2-user/haproxy/:/usr/local/etc/haproxy:ro \
+   -p 80:80 \
+   haproxytech/haproxy-alpine:2.4
+
